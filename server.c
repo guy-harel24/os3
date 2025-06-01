@@ -28,7 +28,7 @@ void getargs(int *port, int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-    int y;
+
     // Create the global server log
     server_log log = create_log();
 
