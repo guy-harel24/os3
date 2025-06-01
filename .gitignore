@@ -1,0 +1,8 @@
+server.o
+request.o
+log.o
+segel.o
+client.o
+output.cgi
+server
+client
