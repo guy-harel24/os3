@@ -13,13 +13,16 @@
 //
 
 // Parses command-line arguments
-void getargs(int *port, int argc, char *argv[])
+void getargs(int *port, int* thread_count, int* queue_size, int argc, char *argv[])
 {
-    if (argc < 2) {
+    if (argc < 2) { // TODO: Guy — needs to have exactly 4 params, argc == 4, print error
         fprintf(stderr, "Usage: %s <port>\n", argv[0]);
         exit(1);
     }
     *port = atoi(argv[1]);
+    // TODO: Guy — needs to be positive integers, print error
+    *thread_count = atoi(argv[2]);
+    *queue_size = atoi(argv[3]);
 }
 // TODO: HW3 — Initialize thread pool and request queue
 // This server currently handles all requests in the main thread.
@@ -32,26 +35,25 @@ int main(int argc, char *argv[])
     // Create the global server log
     server_log log = create_log();
 
-    int listenfd, connfd, port, clientlen;
+    int listenfd, connfd, port, thread_count, queue_size, clientlen;
     struct sockaddr_in clientaddr;
 
-    getargs(&port, argc, argv);
-
-
-
+    getargs(&port, &thread_count, &queue_size, argc, argv);
     listenfd = Open_listenfd(port);
+
     while (1) {
         clientlen = sizeof(clientaddr);
         connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
 
         // TODO: HW3 — Record the request arrival time here
+        // TODO: Guy - work with request queue here
+
 
         // DEMO PURPOSE ONLY:
         // This is a dummy request handler that immediately processes
         // the request in the main thread without concurrency.
         // Replace this with logic to enqueue the connection and let
         // a worker thread process it from the queue.
-
         threads_stats t = malloc(sizeof(struct Threads_stats));
         t->id = 0;             // Thread ID (placeholder)
         t->stat_req = 0;       // Static request count
@@ -61,7 +63,7 @@ int main(int argc, char *argv[])
         struct timeval arrival, dispatch;
         arrival.tv_sec = 0; arrival.tv_usec = 0;   // DEMO: dummy timestamps
         dispatch.tv_sec = 0; dispatch.tv_usec = 0; // DEMO: dummy timestamps
-        // gettimeofday(&arrival, NULL);
+        //gettimeofday(&arrival, NULL);
 
         // Call the request handler (immediate in main thread — DEMO ONLY)
         requestHandle(connfd, arrival, dispatch, t, log);
