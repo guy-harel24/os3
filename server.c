@@ -1,6 +1,8 @@
 #include "segel.h"
 #include "request.h"
 #include "log.h"
+#include "queue.h"
+#include "threadPool.h"
 
 //
 // server.c: A very, very simple web server
@@ -15,19 +17,18 @@
 // Parses command-line arguments
 void getargs(int *port, int* thread_count, int* queue_size, int argc, char *argv[])
 {
-    if (argc < 2) { // TODO: Guy — needs to have exactly 4 params, argc == 4, print error
-        fprintf(stderr, "Usage: %s <port>\n", argv[0]);
+    if (argc < 4) {
+        fprintf(stderr, "Usage: %s <port> <threads> <queue_size> \n", argv[0]);
         exit(1);
     }
     *port = atoi(argv[1]);
-    // TODO: Guy — needs to be positive integers, print error
     *thread_count = atoi(argv[2]);
     *queue_size = atoi(argv[3]);
+
+    if(*port <= 0 || *thread_count <= 0 || *queue_size <= 0){
+        unix_error("error: invalid arguments\n");
+    }
 }
-// TODO: HW3 — Initialize thread pool and request queue
-// This server currently handles all requests in the main thread.
-// You must implement a thread pool (fixed number of worker threads)
-// that process requests from a synchronized queue.
 
 int main(int argc, char *argv[])
 {
@@ -40,35 +41,31 @@ int main(int argc, char *argv[])
 
     getargs(&port, &thread_count, &queue_size, argc, argv);
     listenfd = Open_listenfd(port);
+    //create the request queue
+    struct Queue request_queue;
+    queue_init(&request_queue, queue_size);
+    //create the thread pool
+    struct ThreadPool tp;
+    initThreadPool(&tp, thread_count, &request_queue, log);
 
     while (1) {
         clientlen = sizeof(clientaddr);
         connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
 
-        // TODO: HW3 — Record the request arrival time here
+        struct timeval arrival;
+        gettimeofday(&arrival, NULL);
         // TODO: Guy - work with request queue here
 
+        //critical section - pushing to queue
+        pthread_mutex_lock(&tp.lock);
+        if(tp.request_queue->capacity == tp.request_queue->queue_size) {
+            pthread_cond_wait(&tp.queue_not_full, &tp.lock);
+        }
+        queue_push(tp.request_queue, connfd, arrival);
+        tp.request_queue->capacity++;
+        pthread_cond_signal(&tp.queue_not_empty);
+        pthread_mutex_unlock(&tp.lock);
 
-        // DEMO PURPOSE ONLY:
-        // This is a dummy request handler that immediately processes
-        // the request in the main thread without concurrency.
-        // Replace this with logic to enqueue the connection and let
-        // a worker thread process it from the queue.
-        threads_stats t = malloc(sizeof(struct Threads_stats));
-        t->id = 0;             // Thread ID (placeholder)
-        t->stat_req = 0;       // Static request count
-        t->dynm_req = 0;       // Dynamic request count
-        t->total_req = 0;      // Total request count
-
-        struct timeval arrival, dispatch;
-        arrival.tv_sec = 0; arrival.tv_usec = 0;   // DEMO: dummy timestamps
-        dispatch.tv_sec = 0; dispatch.tv_usec = 0; // DEMO: dummy timestamps
-        //gettimeofday(&arrival, NULL);
-
-        // Call the request handler (immediate in main thread — DEMO ONLY)
-        requestHandle(connfd, arrival, dispatch, t, log);
-
-        free(t); // Cleanup
         Close(connfd); // Close the connection
     }
 

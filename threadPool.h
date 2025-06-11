@@ -12,8 +12,10 @@ struct ThreadPool{
     // a lock for the queue
     pthread_mutex_t lock;
     // a condition var of some kind - if queue is not empty we want to assign a request to a thread
-    pthread_cond_t request_available;
-    // a pointer of the queue?
+    pthread_cond_t queue_not_empty;
+    // if queue is full we want to block master thread
+    pthread_cond_t queue_no_full;
+    // a pointer of the queue
     struct Queue* request_queue;
     // a pointer of the server
     server_log log;
@@ -26,7 +28,8 @@ void* workerThread(void* var);
 void initThreadPool(struct ThreadPool* tp, int thread_count, struct Queue* request_queue, server_log log){
     tp->thread_count = thread_count;
     pthread_mutex_init(&tp->lock, NULL);
-    pthread_cond_init(&tp->request_available, NULL);
+    pthread_cond_init(&tp->queue_not_empty, NULL);
+    pthread_cond_init(&tp->queue_no_full, NULL);
     tp->request_queue = request_queue;
     tp->log = log;
     pthread_t* threads = malloc(sizeof(pthread_t)*thread_count);
@@ -46,7 +49,7 @@ void* workerThread(void* var){
     //lock the mutex - while handling the shared queue because it is a critical section
     pthread_mutex_lock(&tp->lock);
     if(request_queue->head == NULL){
-        pthread_cond_wait(&tp->request_available, &tp->lock);//cond_wait for q not to be empty, use lock1
+        pthread_cond_wait(&tp->queue_not_empty, &tp->lock);//cond_wait for q not to be empty, use lock1
     }
     int fd = request_queue->head->fd;
     struct timeval arrival = request_queue->head->arrival;
@@ -69,6 +72,7 @@ void* workerThread(void* var){
     pthread_mutex_lock(&tp->lock);
     //after thread finished update queue capacity down by 1
     request_queue->capacity--;
+    pthread_cond_signal(&tp->queue_no_full);
     //make sure that finished thread will try to run again, maybe call worker thread again
     //or maybe call worker thread in an endless loop
     //unlock lock 1
