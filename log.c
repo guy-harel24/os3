@@ -31,9 +31,8 @@ server_log create_log() {
     return log;
 }
 
-// Destroys and frees the log (stub)
+// Destroys and frees the log
 void destroy_log(server_log log) {
-    // TODO: Free all internal resources used by the log
     struct LogNode *current = log->head;
     while (current){
         struct LogNode* temp = log->head->next;
@@ -43,29 +42,30 @@ void destroy_log(server_log log) {
     }
     free(log);
 }
-// Returns dummy log content as string (stub)
+
+//returns the content of the log
 int get_log(server_log log, char** dst) {
-    // TODO: Return the full contents of the log as a dynamically allocated string
-    // This function should handle concurrent access
+
     reader_lock();
     int len = 1;
     struct LogNode *current = log->head;
 
+    //count log size
     while (current){
         len += current->data_len + 1;
         current = current->next;
     }
 
+    //allocate a string big enough for the whole log
     char *result = malloc(len);
     if (!result) {
         reader_unlock();
-        //TODO: Guy - print error here
-        return -1;
+        app_error("error: Bad Allocation");
     }
 
+    //copy the log content into the result string as efficiently as possible
     char *write_pos = result;
     current = log->head;
-
     while (current) {
         memcpy(write_pos, current->data, current->data_len);
         write_pos += current->data_len;
@@ -79,23 +79,27 @@ int get_log(server_log log, char** dst) {
     *write_pos = '\0';
     *dst = result;
     reader_unlock();
+    //return number of chars in the log - not including NULL termination
     return len - 1;
 
 }
 
-// Appends a new entry to the log (no-op stub)
+// Appends a new entry to the log
 void add_to_log(server_log log, const char* data, int data_len) {
-    // TODO: Append the provided data to the log
+
     // This function should handle concurrent access
-    //writer_lock();
+    // writer_lock(); - this lock was moved down since this is not a critical section
+    // creating logEntry
     struct LogNode *newLog = malloc(sizeof(struct LogNode));
     char *data_copy = malloc(data_len + 1);
     memcpy(data_copy, data, data_len);
     data_copy[data_len] = '\0';
     newLog->data = data_copy;
+    newLog->data_len = data_len;
     newLog->next = NULL;
 
-    //critical section of changing the shared log
+    // critical section of changing the shared log
+    // pushing entry to end of the log
     writer_lock();
     if(log->tail) {
         log->tail->next = newLog;

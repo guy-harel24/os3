@@ -94,9 +94,9 @@ void* multithreadRequest(void* var){
 
 int main(int argc, char *argv[])
 {
-    char *host, *filename, *method;
-    int port;
-    int clientfd;
+//    char *host, *filename, *method;
+//    int port;
+//    int clientfd;
 
     // Validate input arguments
     if (argc != 5) {
@@ -111,11 +111,11 @@ int main(int argc, char *argv[])
     req.filename = argv[3];
     req.method = argv[4];
 
-    pthread_t threads[5];
-    for (int i = 0; i < 5; i++){
+    pthread_t threads[1];
+    for (int i = 0; i < 1; i++){
         pthread_create(&threads[i], NULL, multithreadRequest, &req);
     }
-    for (int i = 0; i < 5; i++){
+    for (int i = 0; i < 1; i++){
         pthread_join(threads[i], NULL);
     }
 
