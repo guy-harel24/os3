@@ -14,7 +14,7 @@ struct ThreadPool{
     // a condition var of some kind - if queue is not empty we want to assign a request to a thread
     pthread_cond_t queue_not_empty;
     // if queue is full we want to block master thread
-    pthread_cond_t queue_no_full;
+    pthread_cond_t queue_not_full;
     // a pointer of the queue
     struct Queue* request_queue;
     // a pointer of the server
@@ -29,7 +29,7 @@ void initThreadPool(struct ThreadPool* tp, int thread_count, struct Queue* reque
     tp->thread_count = thread_count;
     pthread_mutex_init(&tp->lock, NULL);
     pthread_cond_init(&tp->queue_not_empty, NULL);
-    pthread_cond_init(&tp->queue_no_full, NULL);
+    pthread_cond_init(&tp->queue_not_full, NULL);
     tp->request_queue = request_queue;
     tp->log = log;
     pthread_t* threads = malloc(sizeof(pthread_t)*thread_count);
@@ -53,6 +53,8 @@ void* workerThread(void* var){
     }
     int fd = request_queue->head->fd;
     struct timeval arrival = request_queue->head->arrival;
+    printf("current fd is: %d\n", fd);
+
     //remove head from queue
     queue_pop(request_queue);
     //unlock lock 1
@@ -66,13 +68,14 @@ void* workerThread(void* var){
     t->stat_req = 0;       // Static request count
     t->dynm_req = 0;       // Dynamic request count
     t->total_req = 0;      // Total request count
+    printf("current fd is: %d\n", fd);
     requestHandle(fd, arrival, dispatch,t ,tp->log); //TODO: Guy - figure out what is t_stats (the missing param)
 
     //lock lock1
     pthread_mutex_lock(&tp->lock);
     //after thread finished update queue capacity down by 1
     request_queue->capacity--;
-    pthread_cond_signal(&tp->queue_no_full);
+    pthread_cond_signal(&tp->queue_not_full);
     //make sure that finished thread will try to run again, maybe call worker thread again
     //or maybe call worker thread in an endless loop
     //unlock lock 1

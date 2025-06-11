@@ -198,6 +198,7 @@ void requestHandle(int fd, struct timeval arrival, struct timeval dispatch, thre
     rio_t rio;
 
     Rio_readinitb(&rio, fd);
+    printf("current fd inside request handler is: %d\n", fd);
     Rio_readlineb(&rio, buf, MAXLINE);
     sscanf(buf, "%s %s %s", method, uri, version);
 

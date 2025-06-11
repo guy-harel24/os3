@@ -362,6 +362,7 @@ static ssize_t rio_read(rio_t *rp, char *usrbuf, size_t n)
 /* $begin rio_readinitb */
 void rio_readinitb(rio_t *rp, int fd) 
 {
+    printf("file descriptor in rio_readinitb is: %d\n", fd);
     rp->rio_fd = fd;  
     rp->rio_cnt = 0;  
     rp->rio_bufptr = rp->rio_buf;

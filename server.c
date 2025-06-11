@@ -51,6 +51,7 @@ int main(int argc, char *argv[])
     while (1) {
         clientlen = sizeof(clientaddr);
         connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
+        printf("current fd is: %d\n", connfd);
 
         struct timeval arrival;
         gettimeofday(&arrival, NULL);
