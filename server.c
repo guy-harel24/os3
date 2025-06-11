@@ -26,6 +26,7 @@ void getargs(int *port, int* thread_count, int* queue_size, int argc, char *argv
     *queue_size = atoi(argv[3]);
 
     if(*port <= 0 || *thread_count <= 0 || *queue_size <= 0){
+        app_error("error: invalid arguments");
     }
 }
 
@@ -64,7 +65,8 @@ int main(int argc, char *argv[])
         tp.request_queue->capacity++;
         pthread_cond_signal(&tp.queue_not_empty);
         pthread_mutex_unlock(&tp.lock);
-        Close(connfd); // Close the connection
+        printf("\n");
+      //  Close(connfd); // Close the connection
     }
 
     // Clean up the server log before exiting

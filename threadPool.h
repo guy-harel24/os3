@@ -46,39 +46,42 @@ void* workerThread(void* var){
     struct ThreadPool* tp = (struct ThreadPool*) var;
     struct Queue* request_queue = tp->request_queue;
 
-    //lock the mutex - while handling the shared queue because it is a critical section
-    pthread_mutex_lock(&tp->lock);
-    if(request_queue->head == NULL){
-        pthread_cond_wait(&tp->queue_not_empty, &tp->lock);//cond_wait for q not to be empty, use lock1
+    while (1) {
+        //lock the mutex - while handling the shared queue because it is a critical section
+        pthread_mutex_lock(&tp->lock);
+        if (request_queue->head == NULL) {
+            pthread_cond_wait(&tp->queue_not_empty, &tp->lock);//cond_wait for q not to be empty, use lock1
+        }
+        int fd = request_queue->head->fd;
+        struct timeval arrival = request_queue->head->arrival;
+        printf("current fd is: %d\n", fd);
+
+        //remove head from queue
+        queue_pop(request_queue);
+        //unlock lock 1
+        pthread_mutex_unlock(&tp->lock);
+
+        //assign request to thread - use request handler
+        struct timeval dispatch;
+        gettimeofday(&dispatch, NULL);
+        threads_stats t = malloc(sizeof(struct Threads_stats));
+        t->id = 0;             // Thread ID (placeholder)
+        t->stat_req = 0;       // Static request count
+        t->dynm_req = 0;       // Dynamic request count
+        t->total_req = 0;      // Total request count
+        requestHandle(fd, arrival, dispatch, t, tp->log); //TODO: Guy - figure out what is t_stats (the missing param)
+
+        //lock lock1
+        pthread_mutex_lock(&tp->lock);
+        //after thread finished update queue capacity down by 1
+        request_queue->capacity--;
+        pthread_cond_signal(&tp->queue_not_full);
+        //make sure that finished thread will try to run again, maybe call worker thread again
+        //or maybe call worker thread in an endless loop
+        //unlock lock 1
+        pthread_mutex_unlock(&tp->lock);
+        close(fd);
     }
-    int fd = request_queue->head->fd;
-    struct timeval arrival = request_queue->head->arrival;
-    printf("current fd is: %d\n", fd);
-
-    //remove head from queue
-    queue_pop(request_queue);
-    //unlock lock 1
-    pthread_mutex_unlock(&tp->lock);
-
-    //assign request to thread - use request handler
-    struct timeval dispatch;
-    gettimeofday(&dispatch, NULL);
-    threads_stats t = malloc(sizeof(struct Threads_stats));
-    t->id = 0;             // Thread ID (placeholder)
-    t->stat_req = 0;       // Static request count
-    t->dynm_req = 0;       // Dynamic request count
-    t->total_req = 0;      // Total request count
-    requestHandle(fd, arrival, dispatch,t ,tp->log); //TODO: Guy - figure out what is t_stats (the missing param)
-
-    //lock lock1
-    pthread_mutex_lock(&tp->lock);
-    //after thread finished update queue capacity down by 1
-    request_queue->capacity--;
-    pthread_cond_signal(&tp->queue_not_full);
-    //make sure that finished thread will try to run again, maybe call worker thread again
-    //or maybe call worker thread in an endless loop
-    //unlock lock 1
-    pthread_mutex_unlock(&tp->lock);
 
     return var;
 }
