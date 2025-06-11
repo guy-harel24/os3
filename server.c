@@ -26,7 +26,6 @@ void getargs(int *port, int* thread_count, int* queue_size, int argc, char *argv
     *queue_size = atoi(argv[3]);
 
     if(*port <= 0 || *thread_count <= 0 || *queue_size <= 0){
-        unix_error("error: invalid arguments\n");
     }
 }
 
@@ -51,7 +50,6 @@ int main(int argc, char *argv[])
     while (1) {
         clientlen = sizeof(clientaddr);
         connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
-        printf("current fd is: %d\n", connfd);
 
         struct timeval arrival;
         gettimeofday(&arrival, NULL);
@@ -66,7 +64,6 @@ int main(int argc, char *argv[])
         tp.request_queue->capacity++;
         pthread_cond_signal(&tp.queue_not_empty);
         pthread_mutex_unlock(&tp.lock);
-
         Close(connfd); // Close the connection
     }
 

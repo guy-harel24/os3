@@ -333,11 +333,12 @@ static ssize_t rio_read(rio_t *rp, char *usrbuf, size_t n)
     int cnt;
 
     while (rp->rio_cnt <= 0) {  /* refill if buf is empty */
+        printf("fd inside rio_read is %d\n", rp->rio_fd);
         rp->rio_cnt = read(rp->rio_fd, rp->rio_buf, 
                            sizeof(rp->rio_buf));
         if (rp->rio_cnt < 0) {
-            if (errno != EINTR) /* interrupted by sig handler return */
-                return -1;
+            if (errno != EINTR)  /* interrupted by sig handler return */
+                 return -1;
         }
         else if (rp->rio_cnt == 0)  /* EOF */
             return 0;
@@ -414,8 +415,10 @@ ssize_t rio_readlineb(rio_t *rp, void *usrbuf, size_t maxlen)
                 return 0; /* EOF, no data read */
             else
                 break;    /* EOF, some data was read */
-        } else
+        } else {
+            printf("rc in rio_readlineb is: %d\n", rc);
             return -1;    /* error */
+        }
     }
     *bufp = 0;
     return n;
@@ -458,8 +461,10 @@ ssize_t Rio_readlineb(rio_t *rp, void *usrbuf, size_t maxlen)
 {
     ssize_t rc;
 
-    if ((rc = rio_readlineb(rp, usrbuf, maxlen)) < 0)
+    if ((rc = rio_readlineb(rp, usrbuf, maxlen)) < 0) {
+        printf("rc in Rio_readlineb is: %ld\n", rc);
         unix_error("Rio_readlineb error");
+    }
     return rc;
 } 
 

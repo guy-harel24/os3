@@ -41,7 +41,7 @@ void initThreadPool(struct ThreadPool* tp, int thread_count, struct Queue* reque
 }
 
 
-//passed function is a function which is joined for all threads
+//passed function is a function which is joined for all threads - PROBABLY endless loop!
 void* workerThread(void* var){
     struct ThreadPool* tp = (struct ThreadPool*) var;
     struct Queue* request_queue = tp->request_queue;
@@ -68,7 +68,6 @@ void* workerThread(void* var){
     t->stat_req = 0;       // Static request count
     t->dynm_req = 0;       // Dynamic request count
     t->total_req = 0;      // Total request count
-    printf("current fd is: %d\n", fd);
     requestHandle(fd, arrival, dispatch,t ,tp->log); //TODO: Guy - figure out what is t_stats (the missing param)
 
     //lock lock1
@@ -81,6 +80,7 @@ void* workerThread(void* var){
     //unlock lock 1
     pthread_mutex_unlock(&tp->lock);
 
+    return var;
 }
 
 
