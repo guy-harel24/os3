@@ -66,6 +66,32 @@ void clientPrint(int fd)
     }
 }
 
+struct ClientRequest{
+    char* host;
+    char* filename;
+    char* method;
+    int port;
+};
+
+void* multithreadRequest(void* var){
+    // Open a connection to the specified server
+    struct ClientRequest *req = (struct ClientRequest*) var;
+    int clientfd = Open_clientfd(req->host, req->port);
+    if (clientfd < 0) {
+        fprintf(stderr, "Error connecting to %s:%d\n", req->host, req->port);
+        exit(1);
+    }
+
+    printf("Connected to server. clientfd = %d\n", clientfd);
+
+    // Send HTTP request and read response
+    clientSend(clientfd, req->filename, req->method);
+    clientPrint(clientfd);
+    close(clientfd);
+    return var;
+}
+
+
 int main(int argc, char *argv[])
 {
     char *host, *filename, *method;
@@ -79,25 +105,19 @@ int main(int argc, char *argv[])
     }
 
     // Parse command-line arguments
-    host = argv[1];
-    port = atoi(argv[2]);
-    filename = argv[3];
-    method = argv[4];
+    struct ClientRequest req;
+    req.host = argv[1];
+    req.port = atoi(argv[2]);
+    req.filename = argv[3];
+    req.method = argv[4];
 
-    // Open a connection to the specified server
-    clientfd = Open_clientfd(host, port);
-    if (clientfd < 0) {
-        fprintf(stderr, "Error connecting to %s:%d\n", host, port);
-        exit(1);
+    pthread_t threads[5];
+    for (int i = 0; i < 5; i++){
+        pthread_create(&threads[i], NULL, multithreadRequest, &req);
+    }
+    for (int i = 0; i < 5; i++){
+        pthread_join(threads[i], NULL);
     }
 
-    printf("Connected to server. clientfd = %d\n", clientfd);
-
-    // Send HTTP request and read response
-    clientSend(clientfd, filename, method);
-    clientPrint(clientfd);
-
-    // Clean up
-    Close(clientfd);
     return 0;
 }

@@ -54,7 +54,6 @@ void* workerThread(void* var){
         }
         int fd = request_queue->head->fd;
         struct timeval arrival = request_queue->head->arrival;
-        printf("current fd is: %d\n", fd);
 
         //remove head from queue
         queue_pop(request_queue);

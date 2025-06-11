@@ -54,7 +54,6 @@ int main(int argc, char *argv[])
 
         struct timeval arrival;
         gettimeofday(&arrival, NULL);
-        // TODO: Guy - work with request queue here
 
         //critical section - pushing to queue
         pthread_mutex_lock(&tp.lock);
@@ -65,8 +64,6 @@ int main(int argc, char *argv[])
         tp.request_queue->capacity++;
         pthread_cond_signal(&tp.queue_not_empty);
         pthread_mutex_unlock(&tp.lock);
-        printf("\n");
-      //  Close(connfd); // Close the connection
     }
 
     // Clean up the server log before exiting
