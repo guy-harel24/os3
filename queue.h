@@ -33,6 +33,11 @@ int queue_push(struct Queue* q, int fd, struct timeval arrival) {
     }
 
     struct Node* newNode = malloc(sizeof(struct Node));
+
+    if(!newNode){
+        app_error("error: Bad Allocation");
+    }
+
     newNode->fd = fd;
     newNode->arrival = arrival;
     newNode->next = NULL;
@@ -65,6 +70,17 @@ void queue_pop(struct Queue* q) {
 
 struct Node* queue_front(struct Queue* q) {
     return q->head;
+}
+
+void queue_destroy(struct Queue* q){
+    if (!q) return;
+
+    struct Node *current = q->head;
+    while (current){
+        struct Node* temp = current;
+        current = current->next;
+        free(temp);
+    }
 }
 
 

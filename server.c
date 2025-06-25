@@ -15,6 +15,32 @@
 //
 
 // Parses command-line arguments
+
+
+// static int listenfd_global;
+struct ThreadPool tp;
+struct Queue request_queue;
+static struct Server_Log* copy_log;
+
+void clean_up_server(int sig){
+
+      tp.shutDown = 1;
+//    pthread_mutex_lock(&tp.lock);
+//    pthread_cond_broadcast(&tp.queue_not_empty);
+//    pthread_cond_broadcast(&tp.queue_not_full);
+//    pthread_mutex_unlock(&tp.lock);
+
+
+    for (int i = 0; i < tp.thread_count; i++)
+        pthread_cancel(tp.threads[i]);
+
+    ThreadPool_destroy(&tp);
+    queue_destroy(&request_queue);
+    destroy_log(copy_log);
+    printf("Syscall :)\n");
+    exit(0);
+}
+
 void getargs(int *port, int* thread_count, int* queue_size, int argc, char *argv[])
 {
     if (argc < 4) {
@@ -33,24 +59,39 @@ void getargs(int *port, int* thread_count, int* queue_size, int argc, char *argv
 int main(int argc, char *argv[])
 {
 
-    // Create the global server log
     server_log log = create_log();
+    copy_log = log;
 
+    signal(SIGINT,clean_up_server);
+    signal(SIGTERM,clean_up_server);
     int listenfd, connfd, port, thread_count, queue_size, clientlen;
     struct sockaddr_in clientaddr;
 
     getargs(&port, &thread_count, &queue_size, argc, argv);
     listenfd = Open_listenfd(port);
     //create the request queue
-    struct Queue request_queue;
     queue_init(&request_queue, queue_size);
+
+
+//    listenfd_global = Open_listenfd(port);
+
     //create the thread pool
-    struct ThreadPool tp;
     initThreadPool(&tp, thread_count, &request_queue, log);
+//    initThreadPool(&tp, thread_count);
 
     while (1) {
+
         clientlen = sizeof(clientaddr);
         connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
+
+//        struct sockaddr_in clientaddr;
+//        int connfd = Accept(listenfd_global,
+//                            (SA *)&clientaddr,
+//                            &clientlen);
+        if (connfd < 0) {
+            // closing listenfd_global in the handler makes accept() fail
+            break;
+        }
 
         struct timeval arrival;
         gettimeofday(&arrival, NULL);
@@ -59,6 +100,7 @@ int main(int argc, char *argv[])
         pthread_mutex_lock(&tp.lock);
         if(tp.request_queue->capacity == tp.request_queue->queue_size) {
             pthread_cond_wait(&tp.queue_not_full, &tp.lock);
+       //     printf("\n");
         }
         queue_push(tp.request_queue, connfd, arrival);
         tp.request_queue->capacity++;
@@ -66,8 +108,11 @@ int main(int argc, char *argv[])
         pthread_mutex_unlock(&tp.lock);
     }
 
-    // Clean up the server log before exiting
-    destroy_log(log);
 
-    // TODO: HW3 — Add cleanup code for thread pool and queue
+    return 0;
+
 }
+
+
+
+

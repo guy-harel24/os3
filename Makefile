@@ -21,7 +21,7 @@ server: server.o request.o segel.o log.o
 	$(CC) $(CFLAGS) -o server server.o request.o segel.o log.o $(LIBS)
 
 client: client.o segel.o
-	$(CC) $(CFLAGS) -o client client.o segel.o
+	$(CC) $(CFLAGS) -o client client.o segel.o $(LIBS)
 
 output.cgi: output.c
 	$(CC) $(CFLAGS) -o output.cgi output.c

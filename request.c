@@ -176,6 +176,7 @@ void requestServePost(int fd,  struct timeval arrival, struct timeval dispatch, 
 {
     char header[MAXBUF], *body = NULL;
     int body_len = get_log(log, &body);
+    t_stats->post_req++;
     // put together response
     sprintf(header, "HTTP/1.0 200 OK\r\n");
     sprintf(header, "%sServer: OS-HW3 Web Server\r\n", header);
@@ -219,7 +220,7 @@ void requestHandle(int fd, struct timeval arrival, struct timeval dispatch, thre
                              arrival, dispatch, t_stats);
                 return;
             }
-
+            t_stats->stat_req++;
             requestServeStatic(fd, filename, sbuf.st_size, arrival, dispatch, t_stats);
 
         } else {
@@ -229,16 +230,19 @@ void requestHandle(int fd, struct timeval arrival, struct timeval dispatch, thre
                              arrival, dispatch, t_stats);
                 return;
             }
-
+            t_stats->dynm_req++;
             requestServeDynamic(fd, filename, cgiargs, arrival, dispatch, t_stats);
         }
 
         // TODO: add log entry using add_to_log(server_log log, const char* data, int data_len);
         char log_entry[MAXLINE];
         int entry_length = append_stats(log_entry,t_stats, arrival, dispatch);
+
         add_to_log(log, log_entry, entry_length);
+        log_entry[0] = '\0';
 
     } else if (!strcasecmp(method, "POST")) {
+
         requestServePost(fd, arrival, dispatch, t_stats, log);
 
     } else {

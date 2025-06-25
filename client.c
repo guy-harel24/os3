@@ -91,7 +91,6 @@ void* multithreadRequest(void* var){
     return var;
 }
 
-
 int main(int argc, char *argv[])
 {
 //    char *host, *filename, *method;
@@ -111,11 +110,13 @@ int main(int argc, char *argv[])
     req.filename = argv[3];
     req.method = argv[4];
 
-    pthread_t threads[1];
-    for (int i = 0; i < 1; i++){
+  //   multithreadRequest((void*)&req);
+
+    pthread_t threads[3];
+    for (int i = 0; i < 3; i++){
         pthread_create(&threads[i], NULL, multithreadRequest, &req);
     }
-    for (int i = 0; i < 1; i++){
+    for (int i = 0; i < 3; i++){
         pthread_join(threads[i], NULL);
     }
 

@@ -2,6 +2,7 @@
 #include <string.h>
 #include "log.h"
 #include "WRLocks.h"
+#include <unistd.h>
 // Opaque struct definition
 
 struct LogNode{
@@ -26,6 +27,9 @@ void Server_Log_Init(server_log log) {
 server_log create_log() {
     // TODO: Allocate and initialize internal log structure
     server_log log = (server_log)malloc(sizeof(struct Server_Log));
+    if(!log){
+        app_error("error: Bad Allocation");
+    }
     Server_Log_Init(log);
     readers_writers_init();
     return log;
@@ -33,12 +37,16 @@ server_log create_log() {
 
 // Destroys and frees the log
 void destroy_log(server_log log) {
+    if (!log) return;
+
     struct LogNode *current = log->head;
-    while (current){
-        struct LogNode* temp = log->head->next;
-        free(current->data);  // Free the data
-        free(current);
-        current = temp;
+    while (current) {
+        struct LogNode* temp = current;
+        current = current->next;
+        if (temp->data) {
+            free((void*)temp->data);
+        }
+        free(temp);
     }
     free(log);
 }
@@ -56,7 +64,6 @@ int get_log(server_log log, char** dst) {
         current = current->next;
     }
 
-    //allocate a string big enough for the whole log
     char *result = malloc(len);
     if (!result) {
         reader_unlock();
@@ -90,8 +97,16 @@ void add_to_log(server_log log, const char* data, int data_len) {
     // This function should handle concurrent access
     // writer_lock(); - this lock was moved down since this is not a critical section
     // creating logEntry
+    //printf("The added data is: %s\n",data);
     struct LogNode *newLog = malloc(sizeof(struct LogNode));
+    if (!newLog){
+        app_error("error: Bad Allocation");
+    }
     char *data_copy = malloc(data_len + 1);
+    if (!data_copy){
+        app_error("error: Bad Allocation");
+    }
+
     memcpy(data_copy, data, data_len);
     data_copy[data_len] = '\0';
     newLog->data = data_copy;
@@ -108,6 +123,7 @@ void add_to_log(server_log log, const char* data, int data_len) {
         log->head = newLog;
         newLog->prev = NULL;
     }
+  //  usleep(200000);
     log->tail = newLog;
     writer_unlock();
 }
