@@ -234,12 +234,11 @@ void requestHandle(int fd, struct timeval arrival, struct timeval dispatch, thre
             requestServeDynamic(fd, filename, cgiargs, arrival, dispatch, t_stats);
         }
 
-        // TODO: add log entry using add_to_log(server_log log, const char* data, int data_len);
         char log_entry[MAXLINE];
-        int entry_length = append_stats(log_entry,t_stats, arrival, dispatch);
-
-        add_to_log(log, log_entry, entry_length);
         log_entry[0] = '\0';
+        int entry_length = append_stats(log_entry,t_stats, arrival, dispatch);
+        add_to_log(log, log_entry, entry_length);
+
 
     } else if (!strcasecmp(method, "POST")) {
 

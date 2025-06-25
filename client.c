@@ -112,11 +112,11 @@ int main(int argc, char *argv[])
 
   //   multithreadRequest((void*)&req);
 
-    pthread_t threads[3];
-    for (int i = 0; i < 3; i++){
+    pthread_t threads[5];
+    for (int i = 0; i < 5; i++){
         pthread_create(&threads[i], NULL, multithreadRequest, &req);
     }
-    for (int i = 0; i < 3; i++){
+    for (int i = 0; i < 5; i++){
         pthread_join(threads[i], NULL);
     }
 

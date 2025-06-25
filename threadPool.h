@@ -76,13 +76,13 @@ void* workerThread(void* var){
     while (1) {
         //ciritical section - lock the mutex - while handling the shared queue because it is a critical section
         pthread_mutex_lock(&tp->lock);
-        if (!tp->shutDown && request_queue->head == NULL) {
+        while (request_queue->head == NULL) { // maybe notice tp.shutdown here
             pthread_cond_wait(&tp->queue_not_empty, &tp->lock);//cond_wait for q not to be empty, use lock1
         }
-        if (tp->shutDown) {
-            pthread_mutex_unlock(&tp->lock);
-            break;
-        }
+//        if (tp->shutDown) {
+//            pthread_mutex_unlock(&tp->lock);
+//            break;
+//        }
         int fd = request_queue->head->fd;
         struct timeval arrival = request_queue->head->arrival;
         //remove head from queue
@@ -100,7 +100,6 @@ void* workerThread(void* var){
             dispatch.tv_sec -= 1;
             dispatch.tv_usec += 1000000;
         }
-
         threads_stats t = ht_find(tp->statsTable,pthread_self());
         requestHandle(fd, arrival, dispatch,t , tp->log);
 
@@ -108,6 +107,7 @@ void* workerThread(void* var){
         pthread_mutex_lock(&tp->lock);
         //after thread finished update queue capacity down by 1
         request_queue->capacity--;
+        printf("connfd %d executed. queue capacity now is: %d\n",fd, request_queue->capacity);
         pthread_cond_signal(&tp->queue_not_full);
         //unlock lock 1
         pthread_mutex_unlock(&tp->lock);

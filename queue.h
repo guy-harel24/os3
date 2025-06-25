@@ -28,10 +28,10 @@ void queue_init(struct Queue* q,int queue_size) {
 
 int queue_push(struct Queue* q, int fd, struct timeval arrival) {
 
+    //TODO: Decide on this
     if(q->capacity == q->queue_size){
         return 0;
     }
-
     struct Node* newNode = malloc(sizeof(struct Node));
 
     if(!newNode){

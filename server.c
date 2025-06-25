@@ -82,7 +82,9 @@ int main(int argc, char *argv[])
     while (1) {
 
         clientlen = sizeof(clientaddr);
+        printf("Listening...\n");
         connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
+        printf("Got a Connection! fd is: %d\n", connfd);
 
 //        struct sockaddr_in clientaddr;
 //        int connfd = Accept(listenfd_global,
@@ -98,17 +100,22 @@ int main(int argc, char *argv[])
 
         //critical section - pushing to queue
         pthread_mutex_lock(&tp.lock);
-        if(tp.request_queue->capacity == tp.request_queue->queue_size) {
+        while (tp.request_queue->capacity == tp.request_queue->queue_size) {
+            printf("waiting\n");
             pthread_cond_wait(&tp.queue_not_full, &tp.lock);
-       //     printf("\n");
+            printf("finished waiting\n");
         }
+
         queue_push(tp.request_queue, connfd, arrival);
+        printf("queue capacity is: %d\n", tp.request_queue->capacity);
+        printf("connfd: %d is pushed\n", connfd);
         tp.request_queue->capacity++;
+        printf("queue capacity now is: %d\n", tp.request_queue->capacity);
         pthread_cond_signal(&tp.queue_not_empty);
         pthread_mutex_unlock(&tp.lock);
     }
 
-
+    clean_up_server(0);
     return 0;
 
 }
