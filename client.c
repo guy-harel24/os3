@@ -110,15 +110,13 @@ int main(int argc, char *argv[])
     req.filename = argv[3];
     req.method = argv[4];
 
-  //   multithreadRequest((void*)&req);
-
-    pthread_t threads[5];
-    for (int i = 0; i < 5; i++){
+    pthread_t threads[3];
+    for (int i = 0; i < 3; i++){
         pthread_create(&threads[i], NULL, multithreadRequest, &req);
     }
-    for (int i = 0; i < 5; i++){
+    for (int i = 0; i < 3; i++){
         pthread_join(threads[i], NULL);
     }
-
+    // multithreadRequest((void*)&req);
     return 0;
 }

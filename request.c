@@ -47,11 +47,11 @@ void requestError(int fd, char *cause, char *errnum, char *shortmsg, char *longm
 	Rio_writen(fd, buf, strlen(buf));
 	printf("%s", buf);
 
-	sprintf(buf, "Content-Type: text/html\r\n");
+	sprintf(buf, "Content-Type: text/html\r\n"); //TODO: added (replaced Type to type)
 	Rio_writen(fd, buf, strlen(buf));
 	printf("%s", buf);
 
-	sprintf(buf, "Content-Length: %lu\r\n", strlen(body));
+	sprintf(buf, "Content-Length: %lu\r\n", strlen(body)); //TODO: added (replaced Length to length)
 
     int buf_len = append_stats(buf, t_stats, arrival, dispatch);
 
@@ -145,6 +145,7 @@ void requestServeDynamic(int fd, char *filename, char *cgiargs, struct timeval a
 }
 
 
+
 void requestServeStatic(int fd, char *filename, int filesize, struct timeval arrival, struct timeval dispatch, threads_stats t_stats)
 {
 	int srcfd;
@@ -192,6 +193,7 @@ void requestServePost(int fd,  struct timeval arrival, struct timeval dispatch, 
 void requestHandle(int fd, struct timeval arrival, struct timeval dispatch, threads_stats t_stats, server_log log)
 {
     // TODO:  should update static request stats
+    t_stats->total_req++; //TODO: added
     int is_static;
     struct stat sbuf;
     char buf[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
@@ -234,11 +236,12 @@ void requestHandle(int fd, struct timeval arrival, struct timeval dispatch, thre
             requestServeDynamic(fd, filename, cgiargs, arrival, dispatch, t_stats);
         }
 
-        char log_entry[MAXLINE];
-        log_entry[0] = '\0';
+        // TODO: add log entry using add_to_log(server_log log, const char* data, int data_len);
+        char log_entry[MAXLINE] = ""; //TODO: added
         int entry_length = append_stats(log_entry,t_stats, arrival, dispatch);
-        add_to_log(log, log_entry, entry_length);
 
+        add_to_log(log, log_entry, entry_length);
+        log_entry[0] = '\0';
 
     } else if (!strcasecmp(method, "POST")) {
 

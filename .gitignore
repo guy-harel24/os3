@@ -6,3 +6,4 @@ client.o
 output.cgi
 server
 client
+/venv

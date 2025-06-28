@@ -97,7 +97,6 @@ void add_to_log(server_log log, const char* data, int data_len) {
     // This function should handle concurrent access
     // writer_lock(); - this lock was moved down since this is not a critical section
     // creating logEntry
-    //printf("The added data is: %s\n",data);
     struct LogNode *newLog = malloc(sizeof(struct LogNode));
     if (!newLog){
         app_error("error: Bad Allocation");
@@ -123,7 +122,7 @@ void add_to_log(server_log log, const char* data, int data_len) {
         log->head = newLog;
         newLog->prev = NULL;
     }
-  //  usleep(200000);
+    usleep(200000); // set this to 0.2 seconds (in microseconds)
     log->tail = newLog;
     writer_unlock();
 }

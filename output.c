@@ -10,7 +10,7 @@
 // handling http requests.
 // 
 
-double spinfor = 5;
+double spinfor = 0.5;
 
 void getargs()
 {

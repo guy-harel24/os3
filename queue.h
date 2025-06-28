@@ -19,19 +19,19 @@ struct Queue {
     int capacity;
 };
 
-void queue_init(struct Queue* q,int queue_size) {
+void queue_init(struct Queue* q,int capacity) {
     q->head = NULL;
     q->tail = NULL;
-    q->queue_size = queue_size;
-    q->capacity = 0;
+    q->queue_size = 0;
+    q->capacity = capacity;
 }
 
 int queue_push(struct Queue* q, int fd, struct timeval arrival) {
 
-    //TODO: Decide on this
     if(q->capacity == q->queue_size){
         return 0;
     }
+
     struct Node* newNode = malloc(sizeof(struct Node));
 
     if(!newNode){
